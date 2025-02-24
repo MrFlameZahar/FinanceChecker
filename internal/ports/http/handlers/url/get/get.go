@@ -7,14 +7,11 @@ import (
 	"FinanceChecker/internal/repo"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/render"
 )
 
 type Request struct {
-	DateFrom        time.Time
-	DateTo          time.Time
 	UserID          int64
 	TransactionType string
 }
@@ -36,16 +33,16 @@ func New(log *slog.Logger, storage repo.Repository) http.HandlerFunc {
 		if err != nil {
 			log.Error("cant decode json", sl.Error(err))
 
-			render.JSON(w, r, Response{[]transaction.Transaction{}, response.Error("something wrong with json")})
+			render.JSON(w, r, Response{nil, response.Error("something wrong with json")})
 
 			return
 		}
 
-		res, err := storage.Get(request.DateFrom, request.DateTo, request.UserID, request.TransactionType)
+		res, err := storage.Get(request.UserID, request.TransactionType)
 		if err != nil {
 			log.Error("cant get transaction data", sl.Error(err))
 
-			render.JSON(w, r, Response{[]transaction.Transaction{}, response.Error("cant get transaction data")})
+			render.JSON(w, r, Response{nil, response.Error("cant get transaction data")})
 
 			return
 		}

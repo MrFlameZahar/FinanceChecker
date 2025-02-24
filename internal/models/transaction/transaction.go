@@ -1,12 +1,11 @@
 package transaction
 
-import "time"
-
 type Transaction struct {
 	Amount   int
-	Date     time.Time
+	Date     int64
 	Comment  string
 	Currency string
 	Type     string
 	ID       int64
+	UserID   int64
 }

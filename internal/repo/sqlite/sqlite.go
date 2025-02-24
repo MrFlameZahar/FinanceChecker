@@ -4,7 +4,6 @@ import (
 	"FinanceChecker/internal/models/transaction"
 	"database/sql"
 	"fmt"
-	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -36,7 +35,7 @@ func New(storagePath string) (*Storage, error) {
 	stmt, err = db.Prepare(`
 	CREATE TABLE IF NOT EXISTS transactions(
 		id INTEGER PRIMARY KEY,
-		user id NOT NULL UNIQUE,
+		user_id NOT NULL,
 		amount INTEGER NOT NULL,
 		date INTEGER NOT NULL,
 		comment TEXT,
@@ -56,12 +55,11 @@ func New(storagePath string) (*Storage, error) {
 }
 
 func (s *Storage) Add(transaction transaction.Transaction, userID int64) (int64, error) {
-	stmt, err := s.db.Prepare("INSERT INTO transactions(id, user, amount, date, comment, type, currency) VALUES(?, ?, ?, ?, ?, ?, ?)")
+	stmt, err := s.db.Prepare("INSERT INTO transactions(user_id, amount, date, comment, type, currency) VALUES(?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return 0, fmt.Errorf("%w", err)
 	}
-	timestump := transaction.Date.Unix()
-	result, err := stmt.Exec(transaction.ID, userID, transaction.Amount, timestump, transaction.Comment, transaction.Type, transaction.Currency)
+	result, err := stmt.Exec(userID, transaction.Amount, transaction.Date, transaction.Comment, transaction.Type, transaction.Currency)
 	if err != nil {
 		return 0, fmt.Errorf("%w", err)
 	}
@@ -72,8 +70,29 @@ func (s *Storage) Add(transaction transaction.Transaction, userID int64) (int64,
 
 	return id, nil
 }
-func (s *Storage) Get(dateFrom, dateTo time.Time, userID int64, transactionType string) ([]transaction.Transaction, error) {
-	panic("implement this")
+func (s *Storage) Get(userID int64, transactionType string) ([]transaction.Transaction, error) {
+	stmt, err := s.db.Prepare("SELECT * FROM transactions WHERE user_id = ? AND type = ?")
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	var transactions []transaction.Transaction
+
+	rows, err := stmt.Query(userID, transactionType)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var transaction transaction.Transaction
+		if err := rows.Scan(&transaction.ID, &transaction.UserID, &transaction.Amount, &transaction.Date, &transaction.Comment, &transaction.Type, &transaction.Currency); err != nil {
+			return nil, fmt.Errorf("%w", err)
+		}
+		transactions = append(transactions, transaction)
+	}
+
+	return transactions, err
 }
 func (s *Storage) Delete(transactionID int64) error {
 	panic("implement this")

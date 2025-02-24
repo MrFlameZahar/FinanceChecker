@@ -12,8 +12,8 @@ import (
 )
 
 type Request struct {
-	UserID      int64
-	Transaction transaction.Transaction
+	UserID      int64                   `json:"UserID"`
+	Transaction transaction.Transaction `json:"Transaction"`
 }
 
 type Response struct {
